@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import invariant from "tiny-invariant";
 import plugin from "bun-plugin-tailwind";
 import { existsSync } from "fs";
 import { rm } from "fs/promises";
@@ -34,7 +35,7 @@ Example:
 }
 
 const toCamelCase = (str: string): string =>
-  str.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+  str.replace(/-([a-z])/g, (g) => g[1]?.toUpperCase() ?? "");
 
 const parseValue = (value: string): any => {
   if (value === "true") return true;
@@ -49,7 +50,7 @@ const parseValue = (value: string): any => {
 };
 
 function parseArgs(): Partial<Bun.BuildConfig> {
-  const config: Partial<Bun.BuildConfig> = {};
+  const config: Record<string, any> = {};
   const args = process.argv.slice(2);
 
   for (let i = 0; i < args.length; i++) {
@@ -86,6 +87,8 @@ function parseArgs(): Partial<Bun.BuildConfig> {
 
     if (key.includes(".")) {
       const [parentKey, childKey] = key.split(".");
+      invariant(parentKey, "Parent key is required");
+      invariant(childKey, "Child key is required");
       config[parentKey] = config[parentKey] || {};
       config[parentKey][childKey] = parseValue(value);
     } else {
