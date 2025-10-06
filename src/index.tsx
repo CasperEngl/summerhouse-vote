@@ -1,201 +1,41 @@
 import { serve } from "bun";
-import index from "./index.html";
-import { dbOperations } from "./database";
+import { Effect } from "effect";
 import {
-  generateSessionId,
-  getSessionId,
-  createResponseWithSession,
-} from "./utils";
+  createUserHandler,
+  createVoteHandler,
+  deleteVoteHandler,
+  getResultsHandler,
+  getSummerHousesHandler,
+  getUserHandler,
+  logoutHandler,
+} from "./api-handlers";
+import { runMigrations } from "./database";
+import index from "./index.html";
+import { ServerRuntime } from "./runtime";
+
+// Run migrations on startup
+Effect.runSync(runMigrations);
 
 const server = serve({
   routes: {
     // API Routes
     "/api/users": {
-      POST: async (req) => {
-        try {
-          const { name } = await req.json();
-          if (!name || typeof name !== "string" || name.trim().length === 0) {
-            return Response.json(
-              { error: "Name is required" },
-              { status: 400 },
-            );
-          }
-
-          let sessionId = getSessionId(req);
-          if (!sessionId) {
-            sessionId = generateSessionId();
-          }
-
-          const userWithVotes = await dbOperations.getUserWithVotes(sessionId);
-          return createResponseWithSession({ user: userWithVotes }, sessionId);
-        } catch (error) {
-          console.error("Error creating user:", error);
-          return Response.json(
-            { error: "Failed to create user" },
-            { status: 500 },
-          );
-        }
-      },
-
-      GET: async (req) => {
-        try {
-          const sessionId = getSessionId(req);
-          if (!sessionId) {
-            return Response.json(
-              { error: "No session found" },
-              { status: 401 },
-            );
-          }
-
-          const userWithVotes = await dbOperations.getUserWithVotes(sessionId);
-          if (!userWithVotes) {
-            return Response.json({ error: "User not found" }, { status: 404 });
-          }
-
-          return Response.json({ user: userWithVotes });
-        } catch (error) {
-          console.error("Error getting user:", error);
-          return Response.json(
-            { error: "Failed to get user" },
-            { status: 500 },
-          );
-        }
-      },
-
-      DELETE: async (req) => {
-        try {
-          // Clear the session cookie by setting it to expire immediately
-          const response = Response.json({ success: true });
-          response.headers.set(
-            "Set-Cookie",
-            "session_id=; HttpOnly; Path=/; SameSite=Strict; Max-Age=0",
-          );
-          return response;
-        } catch (error) {
-          console.error("Error logging out:", error);
-          return Response.json({ error: "Failed to logout" }, { status: 500 });
-        }
-      },
+      POST: (req) => createUserHandler(req).pipe(ServerRuntime.runPromise),
+      GET: (req) => getUserHandler(req).pipe(ServerRuntime.runPromise),
+      DELETE: (req) => logoutHandler(req).pipe(ServerRuntime.runPromise),
     },
 
     "/api/summer-houses": {
-      GET: async () => {
-        try {
-          const summerHouses = await dbOperations.getAllSummerHouses();
-          return Response.json({ summerHouses });
-        } catch (error) {
-          console.error("Error getting summer houses:", error);
-          return Response.json(
-            { error: "Failed to get summer houses" },
-            { status: 500 },
-          );
-        }
-      },
+      GET: (req) => getSummerHousesHandler(req).pipe(ServerRuntime.runPromise),
     },
 
     "/api/votes": {
-      POST: async (req) => {
-        try {
-          const sessionId = getSessionId(req);
-          if (!sessionId) {
-            return Response.json(
-              { error: "No session found" },
-              { status: 401 },
-            );
-          }
-
-          const { summerHouseId } = await req.json();
-          if (!summerHouseId || typeof summerHouseId !== "number") {
-            return Response.json(
-              { error: "Summer house ID is required" },
-              { status: 400 },
-            );
-          }
-
-          const user = await dbOperations.getUserBySessionId(sessionId);
-          if (!user) {
-            return Response.json({ error: "User not found" }, { status: 404 });
-          }
-
-          // Check if user already voted for this summer house
-          const existingVotes = await dbOperations.getVotesByUserId(user.id);
-          const hasVoted = existingVotes.some(
-            (vote) => vote.summerHouseId === summerHouseId,
-          );
-
-          if (hasVoted) {
-            return Response.json(
-              { error: "Already voted for this summer house" },
-              { status: 400 },
-            );
-          }
-
-          const vote = await dbOperations.createVote(user.id, summerHouseId);
-          const userWithVotes = await dbOperations.getUserWithVotes(sessionId);
-
-          return Response.json({ vote, user: userWithVotes });
-        } catch (error) {
-          console.error("Error creating vote:", error);
-          return Response.json(
-            { error: "Failed to create vote" },
-            { status: 500 },
-          );
-        }
-      },
-
-      DELETE: async (req) => {
-        try {
-          const sessionId = getSessionId(req);
-          if (!sessionId) {
-            return Response.json(
-              { error: "No session found" },
-              { status: 401 },
-            );
-          }
-
-          const { summerHouseId } = await req.json();
-          if (!summerHouseId || typeof summerHouseId !== "number") {
-            return Response.json(
-              { error: "Summer house ID is required" },
-              { status: 400 },
-            );
-          }
-
-          const user = await dbOperations.getUserBySessionId(sessionId);
-          if (!user) {
-            return Response.json({ error: "User not found" }, { status: 404 });
-          }
-
-          const deleted = await dbOperations.deleteVote(user.id, summerHouseId);
-          if (!deleted) {
-            return Response.json({ error: "Vote not found" }, { status: 404 });
-          }
-
-          const userWithVotes = await dbOperations.getUserWithVotes(sessionId);
-          return Response.json({ success: true, user: userWithVotes });
-        } catch (error) {
-          console.error("Error deleting vote:", error);
-          return Response.json(
-            { error: "Failed to delete vote" },
-            { status: 500 },
-          );
-        }
-      },
+      POST: (req) => createVoteHandler(req).pipe(ServerRuntime.runPromise),
+      DELETE: (req) => deleteVoteHandler(req).pipe(ServerRuntime.runPromise),
     },
 
     "/api/results": {
-      GET: async () => {
-        try {
-          const results = await dbOperations.getSummerHousesWithVoteCounts();
-          return Response.json({ results });
-        } catch (error) {
-          console.error("Error getting results:", error);
-          return Response.json(
-            { error: "Failed to get results" },
-            { status: 500 },
-          );
-        }
-      },
+      GET: (req) => getResultsHandler(req).pipe(ServerRuntime.runPromise),
     },
 
     // Serve index.html for all unmatched routes.
