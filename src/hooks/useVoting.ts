@@ -1,10 +1,15 @@
 import {
+  queryOptions,
   useMutation,
   useQueryClient,
-  useSuspenseQuery,
 } from "@tanstack/react-query";
 import { resultsApi, summerHousesApi, userApi, votesApi } from "../api";
-import type { CreateUserRequest, UserWithVotes } from "../types";
+import type { SummerHouse } from "../database";
+import type {
+  CreateUserRequest,
+  SummerHouseWithVoteCount,
+  UserWithVotes,
+} from "../types";
 
 // Query keys
 export const queryKeys = {
@@ -13,19 +18,34 @@ export const queryKeys = {
   results: ["results"] as const,
 };
 
-// User hooks
-export const useUser = () => {
-  return useSuspenseQuery({
-    queryKey: queryKeys.user,
-    queryFn: async (): Promise<UserWithVotes | null> => {
-      const response = await userApi.get();
-      return response.user;
-    },
-    retry: false, // Don't retry on 401 (no session)
-    staleTime: 0, // Always check for user session
-  });
-};
+// Query options
+export const userQueryOptions = queryOptions({
+  queryKey: queryKeys.user,
+  queryFn: async (): Promise<UserWithVotes | null> => {
+    const response = await userApi.get();
+    return response.user;
+  },
+  retry: false, // Don't retry on 401 (no session)
+  staleTime: 0, // Always check for user session
+});
 
+export const summerHousesQueryOptions = queryOptions({
+  queryKey: queryKeys.summerHouses,
+  queryFn: async (): Promise<SummerHouse[]> => {
+    const response = await summerHousesApi.getAll();
+    return response.summerHouses;
+  },
+});
+
+export const resultsQueryOptions = queryOptions({
+  queryKey: queryKeys.results,
+  queryFn: async (): Promise<SummerHouseWithVoteCount[]> => {
+    const response = await resultsApi.get();
+    return response.results;
+  },
+});
+
+// Mutations
 export const useCreateUser = () => {
   const queryClient = useQueryClient();
 
@@ -40,18 +60,6 @@ export const useCreateUser = () => {
   });
 };
 
-// Summer houses hooks
-export const useSummerHouses = () => {
-  return useSuspenseQuery({
-    queryKey: queryKeys.summerHouses,
-    queryFn: async () => {
-      const response = await summerHousesApi.getAll();
-      return response.summerHouses;
-    },
-  });
-};
-
-// Voting hooks
 export const useVote = () => {
   const queryClient = useQueryClient();
 
@@ -82,17 +90,6 @@ export const useUnvote = () => {
       queryClient.setQueryData(queryKeys.user, response.user);
       // Invalidate results to refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.results });
-    },
-  });
-};
-
-// Results hooks
-export const useResults = () => {
-  return useSuspenseQuery({
-    queryKey: queryKeys.results,
-    queryFn: async () => {
-      const response = await resultsApi.get();
-      return response.results;
     },
   });
 };

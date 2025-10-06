@@ -70,7 +70,7 @@ export interface UserWithVotes extends User {
 }
 
 // Initialize database
-const sqlite = new Database("voting.db", { create: true });
+const sqlite = new Database("data/voting.db", { create: true });
 export const db = drizzle(sqlite);
 
 // Migration function

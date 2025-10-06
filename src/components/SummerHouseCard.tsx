@@ -1,7 +1,6 @@
 import { ExternalLink, Heart, MapPin } from "lucide-react";
 import { useState } from "react";
 import type { SummerHouse } from "../database";
-import { useUser } from "../hooks/useVoting";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import {
@@ -11,6 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
+import { userQueryOptions } from "@/hooks/useVoting";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 export function SummerHouseCard({
   summerHouse,
@@ -21,12 +22,12 @@ export function SummerHouseCard({
   onVote: (summerHouseId: number) => Promise<void>;
   onUnvote: (summerHouseId: number) => Promise<void>;
 }) {
-  const user = useUser();
+  const userQuery = useSuspenseQuery(userQueryOptions);
   const [isVoting, setIsVoting] = useState(false);
-  const hasVoted = user?.data?.votes.includes(summerHouse.id) ?? false;
+  const hasVoted = userQuery.data?.votes.includes(summerHouse.id) ?? false;
 
   const handleVoteToggle = async () => {
-    if (!user) return;
+    if (!userQuery.data) return;
 
     setIsVoting(true);
     try {
@@ -77,7 +78,7 @@ export function SummerHouseCard({
         <div className="flex gap-2">
           <Button
             onClick={handleVoteToggle}
-            disabled={!user || isVoting}
+            disabled={!userQuery.data || isVoting}
             variant={hasVoted ? "secondary" : "default"}
             className="flex-1"
           >
@@ -99,7 +100,7 @@ export function SummerHouseCard({
           </Button>
         </div>
 
-        {!user && (
+        {!userQuery.data && (
           <p className="text-sm text-muted-foreground mt-2 text-center">
             Log ind for at stemme
           </p>

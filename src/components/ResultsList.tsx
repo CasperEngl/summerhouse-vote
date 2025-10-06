@@ -1,16 +1,19 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { useResults } from "../hooks/useVoting";
+import { resultsQueryOptions } from "../hooks/useVoting";
 
 function ResultsListContent() {
-  const results = useResults();
+  const resultsQuery = useSuspenseQuery(resultsQueryOptions);
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-center mb-6">Afstemningsresultater</h2>
+      <h2 className="text-2xl font-bold text-center mb-6">
+        Afstemningsresultater
+      </h2>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {results.data?.map((result, index) => (
+        {resultsQuery.data?.map((result, index) => (
           <Card key={result.id} className="relative">
             <div className="relative">
               <img

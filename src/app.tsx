@@ -11,7 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "./components/ui/card";
+import { useQuery } from "@tanstack/react-query";
 import { UserSection } from "./components/UserSection";
+import { userQueryOptions } from "./hooks/useVoting";
 import "./index.css";
 
 function ErrorFallback({
@@ -43,6 +45,7 @@ function ErrorFallback({
 
 export function App() {
   const [showResults, setShowResults] = useState(false);
+  const userQuery = useQuery(userQueryOptions);
 
   return (
     <ErrorBoundary
@@ -64,26 +67,31 @@ export function App() {
             {/* User Section */}
             <UserSection />
 
-            {/* Navigation */}
-            <div className="flex justify-center gap-4">
-              <Button
-                variant={!showResults ? "default" : "outline"}
-                onClick={() => setShowResults(false)}
-              >
-                <Vote className="w-4 h-4 mr-2" />
-                Stem
-              </Button>
-              <Button
-                variant={showResults ? "default" : "outline"}
-                onClick={() => setShowResults(true)}
-              >
-                <Trophy className="w-4 h-4 mr-2" />
-                Resultater
-              </Button>
-            </div>
+            {/* Show navigation and content only when user exists */}
+            {userQuery.data && (
+              <>
+                {/* Navigation */}
+                <div className="flex justify-center gap-4">
+                  <Button
+                    variant={!showResults ? "default" : "outline"}
+                    onClick={() => setShowResults(false)}
+                  >
+                    <Vote className="w-4 h-4 mr-2" />
+                    Stem
+                  </Button>
+                  <Button
+                    variant={showResults ? "default" : "outline"}
+                    onClick={() => setShowResults(true)}
+                  >
+                    <Trophy className="w-4 h-4 mr-2" />
+                    Resultater
+                  </Button>
+                </div>
 
-            {/* Content */}
-            {showResults ? <ResultsList /> : <SummerHousesList />}
+                {/* Content */}
+                {showResults ? <ResultsList /> : <SummerHousesList />}
+              </>
+            )}
           </div>
         </div>
       </div>

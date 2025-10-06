@@ -1,6 +1,7 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Vote } from "lucide-react";
 import { Suspense } from "react";
-import { useUser } from "../hooks/useVoting";
+import { userQueryOptions } from "../hooks/useVoting";
 import {
   Card,
   CardContent,
@@ -11,9 +12,9 @@ import {
 import { UserForm } from "./UserForm";
 
 function UserSectionContent() {
-  const user = useUser();
+  const userQuery = useSuspenseQuery(userQueryOptions);
 
-  if (!user) {
+  if (!userQuery.data) {
     return (
       <div className="flex justify-center">
         <UserForm />
@@ -26,11 +27,11 @@ function UserSectionContent() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Vote className="w-5 h-5" />
-          Velkommen, {user.data?.name}!
+          Velkommen, {userQuery.data.name}!
         </CardTitle>
         <CardDescription>
-          Du har stemt på {user.data?.votes.length} sommerhus
-          {user.data?.votes.length !== 1 ? "e" : ""}
+          Du har stemt på {userQuery.data.votes.length} sommerhus
+          {userQuery.data.votes.length !== 1 ? "e" : ""}
         </CardDescription>
       </CardHeader>
     </Card>

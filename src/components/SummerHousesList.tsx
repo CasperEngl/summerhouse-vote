@@ -1,9 +1,14 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
-import { useSummerHouses, useUnvote, useVote } from "../hooks/useVoting";
+import {
+  summerHousesQueryOptions,
+  useUnvote,
+  useVote,
+} from "../hooks/useVoting";
 import { SummerHouseCard } from "./SummerHouseCard";
 
 function SummerHousesListContent() {
-  const summerHouses = useSummerHouses();
+  const summerHousesQuery = useSuspenseQuery(summerHousesQueryOptions);
   const voteMutation = useVote();
   const unvoteMutation = useUnvote();
 
@@ -21,7 +26,7 @@ function SummerHousesListContent() {
         Vælg dine favoritter
       </h2>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {summerHouses.data?.map((summerHouse) => (
+        {summerHousesQuery.data?.map((summerHouse) => (
           <SummerHouseCard
             key={summerHouse.id}
             summerHouse={summerHouse}
