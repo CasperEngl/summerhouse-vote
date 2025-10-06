@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
-import { userQueryOptions } from "@/hooks/useVoting";
+import { userQueryOptions } from "@/hooks/queries";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 export function SummerHouseCard({

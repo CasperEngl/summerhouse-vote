@@ -2,7 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { resultsQueryOptions } from "../hooks/useVoting";
+import { resultsQueryOptions } from "../hooks/queries";
 
 function ResultsListContent() {
   const resultsQuery = useSuspenseQuery(resultsQueryOptions);

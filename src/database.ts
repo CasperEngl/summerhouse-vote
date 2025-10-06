@@ -156,13 +156,18 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
       createUser: (name: string, email: string, sessionId: string) =>
         Effect.tryPromise({
           try: async () => {
+            // Check if user already exists
+            const existingUser = await db.query.users.findFirst({
+              where: eq(users.email, email),
+            });
+
+            if (existingUser) {
+              throw new Error("User with this email already exists");
+            }
+
             const result = await db
               .insert(users)
               .values({ name, email, sessionId })
-              .onConflictDoUpdate({
-                target: users.email,
-                set: { name, sessionId },
-              })
               .returning();
             if (!result[0]) throw new Error("Failed to create user");
             return result[0];
@@ -184,6 +189,24 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
           catch: (error) =>
             new GetUserByEmailError({
               message: "Failed to get user by email",
+              cause: error,
+            }),
+        }),
+
+      updateUserSession: (userId: number, sessionId: string) =>
+        Effect.tryPromise({
+          try: async () => {
+            const result = await db
+              .update(users)
+              .set({ sessionId })
+              .where(eq(users.id, userId))
+              .returning();
+            if (!result[0]) throw new Error("Failed to update user session");
+            return result[0];
+          },
+          catch: (error) =>
+            new CreateUserError({
+              message: "Failed to update user session",
               cause: error,
             }),
         }),

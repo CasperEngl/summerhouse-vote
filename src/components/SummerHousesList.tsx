@@ -1,10 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
-import {
-  summerHousesQueryOptions,
-  useUnvote,
-  useVote,
-} from "../hooks/useVoting";
+import { summerHousesQueryOptions, useUnvote, useVote } from "../hooks/queries";
 import { SummerHouseCard } from "./SummerHouseCard";
 
 function SummerHousesListContent() {

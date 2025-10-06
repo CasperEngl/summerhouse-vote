@@ -12,6 +12,14 @@ const CreateUserRequest = Schema.Struct({
   email: Schema.String.pipe(Schema.nonEmptyString()),
 });
 
+const LoginRequest = Schema.Struct({
+  email: Schema.String.pipe(Schema.nonEmptyString()),
+});
+
+const CheckUserRequest = Schema.Struct({
+  email: Schema.String.pipe(Schema.nonEmptyString()),
+});
+
 const VoteRequest = Schema.Struct({
   summerHouseId: Schema.Number,
 });
@@ -49,7 +57,11 @@ export function createUserHandler(req: Request) {
       sessionId = generateSessionId();
     }
 
-    yield* DatabaseService.createUser(body.name.trim(), body.email.trim().toLowerCase(), sessionId);
+    yield* DatabaseService.createUser(
+      body.name.trim(),
+      body.email.trim().toLowerCase(),
+      sessionId,
+    );
     const userWithVotes = yield* DatabaseService.getUserWithVotes(sessionId);
 
     return createResponseWithSession({ user: userWithVotes }, sessionId);
@@ -57,6 +69,41 @@ export function createUserHandler(req: Request) {
     Effect.catchAll((error) =>
       Effect.logError("Error creating user:", error).pipe(
         Effect.map(() => createErrorResponse("Failed to create user", 500)),
+      ),
+    ),
+  );
+}
+
+export function loginUserHandler(req: Request) {
+  return Effect.gen(function* () {
+    const body = yield* Effect.tryPromise({
+      try: () => req.json(),
+      catch: (error) => new Error(`Failed to parse JSON: ${error}`),
+    }).pipe(Effect.flatMap(Schema.decodeUnknown(LoginRequest)));
+
+    let sessionId = getSessionId(req);
+    if (!sessionId) {
+      sessionId = generateSessionId();
+    }
+
+    // Check if user exists
+    const existingUser = yield* DatabaseService.getUserByEmail(
+      body.email.trim().toLowerCase(),
+    );
+
+    if (!existingUser) {
+      return createErrorResponse("User not found", 404);
+    }
+
+    // Update session for existing user
+    yield* DatabaseService.updateUserSession(existingUser.id, sessionId);
+    const userWithVotes = yield* DatabaseService.getUserWithVotes(sessionId);
+
+    return createResponseWithSession({ user: userWithVotes }, sessionId);
+  }).pipe(
+    Effect.catchAll((error) =>
+      Effect.logError("Error logging in user:", error).pipe(
+        Effect.map(() => createErrorResponse("Failed to login user", 500)),
       ),
     ),
   );
@@ -101,6 +148,29 @@ export function logoutHandler(_req: Request) {
     Effect.catchAll((error) =>
       Effect.logError("Error logging out:", error).pipe(
         Effect.map(() => createErrorResponse("Failed to logout", 500)),
+      ),
+    ),
+  );
+}
+
+export function checkUserHandler(req: Request) {
+  return Effect.gen(function* () {
+    const body = yield* Effect.tryPromise({
+      try: () => req.json(),
+      catch: (error) => new Error(`Failed to parse JSON: ${error}`),
+    }).pipe(Effect.flatMap(Schema.decodeUnknown(CheckUserRequest)));
+
+    const user = yield* DatabaseService.getUserByEmail(
+      body.email.trim().toLowerCase(),
+    );
+
+    return createSuccessResponse({
+      exists: user !== undefined,
+    });
+  }).pipe(
+    Effect.catchAll((error) =>
+      Effect.logError("Error checking user:", error).pipe(
+        Effect.map(() => createErrorResponse("Failed to check user", 500)),
       ),
     ),
   );

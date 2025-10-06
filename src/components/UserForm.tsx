@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useCreateUser } from "../hooks/useVoting";
-import type { UserFormProps, CreateUserRequest } from "../types";
+import { useCheckUser, useCreateUser, useLogin } from "../hooks/queries";
+import type { UserFormProps } from "../types";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -12,28 +13,54 @@ import {
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
+type FormStep = "email" | "name";
+
 export function UserForm({
   onUserCreated,
   isLoading: externalLoading,
 }: UserFormProps) {
-  const createUserMutation = useCreateUser();
+  const [step, setStep] = useState<FormStep>("email");
+  const [email, setEmail] = useState("");
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<CreateUserRequest>({
-    defaultValues: {
-      name: "",
-      email: "",
-    },
+  const checkUserMutation = useCheckUser();
+  const createUserMutation = useCreateUser();
+  const loginMutation = useLogin();
+
+  const emailForm = useForm<{ email: string }>({
+    defaultValues: { email: "" },
   });
 
-  const onSubmit = async (data: CreateUserRequest) => {
+  const nameForm = useForm<{ name: string }>({
+    defaultValues: { name: "" },
+  });
+
+  const onEmailSubmit = async (data: { email: string }) => {
+    try {
+      const userExists = await checkUserMutation.mutateAsync({
+        email: data.email.trim().toLowerCase(),
+      });
+
+      if (userExists) {
+        // User exists, log them in
+        await loginMutation.mutateAsync({
+          email: data.email.trim().toLowerCase(),
+        });
+        // The mutation will handle the success via the onSuccess callback
+      } else {
+        // User doesn't exist, move to name step
+        setEmail(data.email.trim().toLowerCase());
+        setStep("name");
+      }
+    } catch (err) {
+      // Error is handled by the mutation
+    }
+  };
+
+  const onNameSubmit = async (data: { name: string }) => {
     try {
       await createUserMutation.mutateAsync({
         name: data.name.trim(),
-        email: data.email.trim().toLowerCase(),
+        email: email,
       });
       // The mutation will handle the success via the onSuccess callback
     } catch (err) {
@@ -41,27 +68,97 @@ export function UserForm({
     }
   };
 
-  const loading = externalLoading || createUserMutation.isPending || isSubmitting;
-  const error = createUserMutation.error?.message;
+  const onBackToEmail = () => {
+    setStep("email");
+    setEmail("");
+    emailForm.reset();
+    nameForm.reset();
+  };
+
+  const emailLoading =
+    externalLoading ||
+    checkUserMutation.isPending ||
+    loginMutation.isPending ||
+    emailForm.formState.isSubmitting;
+  const nameLoading =
+    externalLoading ||
+    createUserMutation.isPending ||
+    nameForm.formState.isSubmitting;
+
+  const emailError =
+    checkUserMutation.error?.message || loginMutation.error?.message;
+  const nameError = createUserMutation.error?.message;
+
+  if (step === "email") {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle>Velkommen til Sommerhus Afstemning</CardTitle>
+          <CardDescription>Indtast din email for at begynde</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={emailForm.handleSubmit(onEmailSubmit)}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="email">Din email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Indtast din email"
+                disabled={emailLoading}
+                {...emailForm.register("email", {
+                  required: "Email er påkrævet",
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: "Indtast venligst en gyldig email adresse",
+                  },
+                })}
+              />
+              {emailForm.formState.errors.email && (
+                <p className="text-sm text-red-600">
+                  {emailForm.formState.errors.email.message}
+                </p>
+              )}
+            </div>
+
+            {emailError && (
+              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                {emailError}
+              </div>
+            )}
+
+            <Button type="submit" className="w-full" disabled={emailLoading}>
+              {emailLoading ? "Tjekker email..." : "Fortsæt"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Velkommen til Sommerhus Afstemning</CardTitle>
+        <CardTitle>Opret konto</CardTitle>
         <CardDescription>
-          Indtast dit navn og email for at begynde at stemme på dine favorit sommerhuse
+          Indtast dit navn for at oprette din konto
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={nameForm.handleSubmit(onNameSubmit)}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <Label htmlFor="name">Dit navn</Label>
             <Input
               id="name"
               type="text"
               placeholder="Indtast dit navn"
-              disabled={loading}
-              {...register("name", {
+              disabled={nameLoading}
+              {...nameForm.register("name", {
                 required: "Navn er påkrævet",
                 minLength: {
                   value: 2,
@@ -69,39 +166,33 @@ export function UserForm({
                 },
               })}
             />
-            {errors.name && (
-              <p className="text-sm text-red-600">{errors.name.message}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Din email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Indtast din email"
-              disabled={loading}
-              {...register("email", {
-                required: "Email er påkrævet",
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Indtast venligst en gyldig email adresse",
-                },
-              })}
-            />
-            {errors.email && (
-              <p className="text-sm text-red-600">{errors.email.message}</p>
+            {nameForm.formState.errors.name && (
+              <p className="text-sm text-red-600">
+                {nameForm.formState.errors.name.message}
+              </p>
             )}
           </div>
 
-          {error && (
+          {nameError && (
             <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-              {error}
+              {nameError}
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Opretter konto..." : "Start afstemning"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onBackToEmail}
+              disabled={nameLoading}
+              className="flex-1"
+            >
+              Tilbage
+            </Button>
+            <Button type="submit" className="flex-1" disabled={nameLoading}>
+              {nameLoading ? "Opretter konto..." : "Start afstemning"}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>

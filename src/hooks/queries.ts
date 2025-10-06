@@ -6,7 +6,9 @@ import {
 import { resultsApi, summerHousesApi, userApi, votesApi } from "../api";
 import type { SummerHouse } from "../database";
 import type {
+  CheckUserRequest,
   CreateUserRequest,
+  LoginRequest,
   SummerHouseWithVoteCount,
   UserWithVotes,
 } from "../types";
@@ -46,12 +48,35 @@ export const resultsQueryOptions = queryOptions({
 });
 
 // Mutations
+export const useCheckUser = () => {
+  return useMutation({
+    mutationFn: async (data: CheckUserRequest) => {
+      const response = await userApi.check(data);
+      return response.exists;
+    },
+  });
+};
+
 export const useCreateUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: CreateUserRequest) => {
       const response = await userApi.create(data);
+      return response.user;
+    },
+    onSuccess: (user) => {
+      queryClient.setQueryData(queryKeys.user, user);
+    },
+  });
+};
+
+export const useLogin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: LoginRequest) => {
+      const response = await userApi.login(data);
       return response.user;
     },
     onSuccess: (user) => {

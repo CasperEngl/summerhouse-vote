@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { LogOut, User as UserIcon } from "lucide-react";
 import { Suspense } from "react";
-import { useLogout, userQueryOptions } from "../hooks/useVoting";
+import { useLogout, userQueryOptions } from "../hooks/queries";
 import { Button } from "./ui/button";
 import {
   Card,

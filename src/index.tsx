@@ -1,7 +1,9 @@
 import { serve } from "bun";
 import { Effect } from "effect";
 import {
+  checkUserHandler,
   createUserHandler,
+  loginUserHandler,
   createVoteHandler,
   deleteVoteHandler,
   getResultsHandler,
@@ -23,6 +25,14 @@ const server = serve({
       POST: (req) => createUserHandler(req).pipe(ServerRuntime.runPromise),
       GET: (req) => getUserHandler(req).pipe(ServerRuntime.runPromise),
       DELETE: (req) => logoutHandler(req).pipe(ServerRuntime.runPromise),
+    },
+
+    "/api/users/check": {
+      POST: (req) => checkUserHandler(req).pipe(ServerRuntime.runPromise),
+    },
+
+    "/api/users/login": {
+      POST: (req) => loginUserHandler(req).pipe(ServerRuntime.runPromise),
     },
 
     "/api/summer-houses": {

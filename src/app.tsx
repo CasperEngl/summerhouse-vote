@@ -13,7 +13,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { UserSection } from "./components/UserSection";
-import { userQueryOptions } from "./hooks/useVoting";
+import { userQueryOptions } from "./hooks/queries";
 import "./index.css";
 
 function ErrorFallback({

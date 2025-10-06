@@ -25,6 +25,22 @@ export interface CreateUserResponse {
   user: UserWithVotes;
 }
 
+export interface LoginRequest {
+  email: string;
+}
+
+export interface LoginResponse {
+  user: UserWithVotes;
+}
+
+export interface CheckUserRequest {
+  email: string;
+}
+
+export interface CheckUserResponse {
+  exists: boolean;
+}
+
 export interface GetUserResponse {
   user: UserWithVotes | null;
 }

@@ -1,6 +1,10 @@
 import type {
+  CheckUserRequest,
+  CheckUserResponse,
   CreateUserRequest,
   CreateUserResponse,
+  LoginRequest,
+  LoginResponse,
   GetUserResponse,
   GetSummerHousesResponse,
   VoteRequest,
@@ -38,8 +42,20 @@ async function apiRequest<T>(
 
 // User API
 export const userApi = {
+  check: (data: CheckUserRequest): Promise<CheckUserResponse> =>
+    apiRequest("/users/check", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
   create: (data: CreateUserRequest): Promise<CreateUserResponse> =>
     apiRequest("/users", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  login: (data: LoginRequest): Promise<LoginResponse> =>
+    apiRequest("/users/login", {
       method: "POST",
       body: JSON.stringify(data),
     }),
