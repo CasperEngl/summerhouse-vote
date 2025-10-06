@@ -36,7 +36,7 @@ function UserSectionContent() {
   const votesCount = userQuery.data.votes?.length || 0;
 
   return (
-    <Card className="overflow-hidden shadow-none ring-1 ring-gray-200/60">
+    <Card>
       <CardHeader className="border-b">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center ring-1 ring-indigo-200">
