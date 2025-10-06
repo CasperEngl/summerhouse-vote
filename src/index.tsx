@@ -26,8 +26,8 @@ const server = serve({
             sessionId = generateSessionId();
           }
 
-          const user = await dbOperations.createUser(name.trim(), sessionId);
-          return createResponseWithSession({ user }, sessionId);
+          const userWithVotes = await dbOperations.getUserWithVotes(sessionId);
+          return createResponseWithSession({ user: userWithVotes }, sessionId);
         } catch (error) {
           console.error("Error creating user:", error);
           return Response.json(

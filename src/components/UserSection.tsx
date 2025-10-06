@@ -30,8 +30,8 @@ function UserSectionContent() {
           Velkommen, {userQuery.data.name}!
         </CardTitle>
         <CardDescription>
-          Du har stemt på {userQuery.data.votes.length} sommerhus
-          {userQuery.data.votes.length !== 1 ? "e" : ""}
+          Du har stemt på {userQuery.data.votes?.length || 0} sommerhus
+          {(userQuery.data.votes?.length || 0) !== 1 ? "e" : ""}
         </CardDescription>
       </CardHeader>
     </Card>

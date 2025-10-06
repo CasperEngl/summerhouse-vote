@@ -53,7 +53,7 @@ export const userApi = {
         error instanceof Error &&
         error.message.includes("No session found")
       ) {
-        return { user: null as any };
+        return { user: null };
       }
       throw error;
     }

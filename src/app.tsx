@@ -1,5 +1,4 @@
 import { AlertCircle, Trophy, Vote } from "lucide-react";
-import { useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { ResultsList } from "./components/ResultsList";
 import { SummerHousesList } from "./components/SummerHousesList";
@@ -12,6 +11,8 @@ import {
   CardTitle,
 } from "./components/ui/card";
 import { useQuery } from "@tanstack/react-query";
+import { Activity } from "react";
+import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { UserSection } from "./components/UserSection";
 import { userQueryOptions } from "./hooks/useVoting";
 import "./index.css";
@@ -44,8 +45,9 @@ function ErrorFallback({
 }
 
 export function App() {
-  const [showResults, setShowResults] = useState(false);
   const userQuery = useQuery(userQueryOptions);
+  const location = useLocation();
+  const isResultsPage = location.pathname === "/results";
 
   return (
     <ErrorBoundary
@@ -68,30 +70,32 @@ export function App() {
             <UserSection />
 
             {/* Show navigation and content only when user exists */}
-            {userQuery.data && (
-              <>
-                {/* Navigation */}
-                <div className="flex justify-center gap-4">
-                  <Button
-                    variant={!showResults ? "default" : "outline"}
-                    onClick={() => setShowResults(false)}
-                  >
+            <Activity mode={userQuery.data ? "visible" : "hidden"}>
+              {/* Navigation */}
+              <div className="flex justify-center gap-4">
+                <Button
+                  variant={!isResultsPage ? "default" : "outline"}
+                  asChild
+                >
+                  <Link to="/">
                     <Vote className="w-4 h-4 mr-2" />
                     Stem
-                  </Button>
-                  <Button
-                    variant={showResults ? "default" : "outline"}
-                    onClick={() => setShowResults(true)}
-                  >
+                  </Link>
+                </Button>
+                <Button variant={isResultsPage ? "default" : "outline"} asChild>
+                  <Link to="/results">
                     <Trophy className="w-4 h-4 mr-2" />
                     Resultater
-                  </Button>
-                </div>
+                  </Link>
+                </Button>
+              </div>
 
-                {/* Content */}
-                {showResults ? <ResultsList /> : <SummerHousesList />}
-              </>
-            )}
+              {/* Content */}
+              <Routes>
+                <Route path="/" element={<SummerHousesList />} />
+                <Route path="/results" element={<ResultsList />} />
+              </Routes>
+            </Activity>
           </div>
         </div>
       </div>

@@ -24,7 +24,7 @@ export function SummerHouseCard({
 }) {
   const userQuery = useSuspenseQuery(userQueryOptions);
   const [isVoting, setIsVoting] = useState(false);
-  const hasVoted = userQuery.data?.votes.includes(summerHouse.id) ?? false;
+  const hasVoted = userQuery.data?.votes?.includes(summerHouse.id) ?? false;
 
   const handleVoteToggle = async () => {
     if (!userQuery.data) return;
