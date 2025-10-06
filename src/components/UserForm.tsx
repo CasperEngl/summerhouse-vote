@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { useCreateUser } from "../hooks/useVoting";
-import type { UserFormProps } from "../types";
+import type { UserFormProps, CreateUserRequest } from "../types";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -16,25 +16,32 @@ export function UserForm({
   onUserCreated,
   isLoading: externalLoading,
 }: UserFormProps) {
-  const [name, setName] = useState("");
   const createUserMutation = useCreateUser();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateUserRequest>({
+    defaultValues: {
+      name: "",
+      email: "",
+    },
+  });
 
-    if (!name.trim()) {
-      return;
-    }
-
+  const onSubmit = async (data: CreateUserRequest) => {
     try {
-      await createUserMutation.mutateAsync({ name: name.trim() });
+      await createUserMutation.mutateAsync({
+        name: data.name.trim(),
+        email: data.email.trim().toLowerCase(),
+      });
       // The mutation will handle the success via the onSuccess callback
     } catch (err) {
       // Error is handled by the mutation
     }
   };
 
-  const loading = externalLoading || createUserMutation.isPending;
+  const loading = externalLoading || createUserMutation.isPending || isSubmitting;
   const error = createUserMutation.error?.message;
 
   return (
@@ -42,22 +49,48 @@ export function UserForm({
       <CardHeader>
         <CardTitle>Velkommen til Sommerhus Afstemning</CardTitle>
         <CardDescription>
-          Indtast dit navn for at begynde at stemme på dine favorit sommerhuse
+          Indtast dit navn og email for at begynde at stemme på dine favorit sommerhuse
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Dit navn</Label>
             <Input
               id="name"
               type="text"
               placeholder="Indtast dit navn"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
               disabled={loading}
-              required
+              {...register("name", {
+                required: "Navn er påkrævet",
+                minLength: {
+                  value: 2,
+                  message: "Navn skal være mindst 2 tegn langt",
+                },
+              })}
             />
+            {errors.name && (
+              <p className="text-sm text-red-600">{errors.name.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Din email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Indtast din email"
+              disabled={loading}
+              {...register("email", {
+                required: "Email er påkrævet",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "Indtast venligst en gyldig email adresse",
+                },
+              })}
+            />
+            {errors.email && (
+              <p className="text-sm text-red-600">{errors.email.message}</p>
+            )}
           </div>
 
           {error && (

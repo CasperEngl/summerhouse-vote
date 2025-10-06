@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "108742c0-4237-480c-907b-fd3bf64bd25d",
+  "id": "9ac92313-1f79-4a6a-a8c4-008bce311c3b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "summer_houses": {
@@ -67,6 +67,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "session_id": {
           "name": "session_id",
           "type": "text",
@@ -84,6 +91,13 @@
         }
       },
       "indexes": {
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "columns": [
+            "email"
+          ],
+          "isUnique": true
+        },
         "users_session_id_unique": {
           "name": "users_session_id_unique",
           "columns": [

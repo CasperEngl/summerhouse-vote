@@ -9,6 +9,7 @@ import { Data, Effect } from "effect";
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
+  email: text("email").notNull().unique(),
   sessionId: text("session_id").notNull().unique(),
   createdAt: integer("created_at", { mode: "timestamp" }).default(
     sql`(unixepoch())`,
@@ -72,6 +73,13 @@ export interface UserWithVotes extends User {
 
 // Database error types
 export class CreateUserError extends Data.TaggedError("CreateUserError")<{
+  message: string;
+  cause?: unknown;
+}> {}
+
+export class GetUserByEmailError extends Data.TaggedError(
+  "GetUserByEmailError",
+)<{
   message: string;
   cause?: unknown;
 }> {}
@@ -145,15 +153,15 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
   {
     accessors: true,
     succeed: {
-      createUser: (name: string, sessionId: string) =>
+      createUser: (name: string, email: string, sessionId: string) =>
         Effect.tryPromise({
           try: async () => {
             const result = await db
               .insert(users)
-              .values({ name, sessionId })
+              .values({ name, email, sessionId })
               .onConflictDoUpdate({
-                target: users.sessionId,
-                set: { name },
+                target: users.email,
+                set: { name, sessionId },
               })
               .returning();
             if (!result[0]) throw new Error("Failed to create user");
@@ -162,6 +170,20 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
           catch: (error) =>
             new CreateUserError({
               message: "Failed to create user",
+              cause: error,
+            }),
+        }),
+
+      getUserByEmail: (email: string) =>
+        Effect.tryPromise({
+          try: async () => {
+            return await db.query.users.findFirst({
+              where: eq(users.email, email),
+            });
+          },
+          catch: (error) =>
+            new GetUserByEmailError({
+              message: "Failed to get user by email",
               cause: error,
             }),
         }),

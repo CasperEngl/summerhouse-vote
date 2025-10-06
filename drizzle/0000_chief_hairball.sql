@@ -9,10 +9,12 @@ CREATE TABLE `summer_houses` (
 CREATE TABLE `users` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
+	`email` text NOT NULL,
 	`session_id` text NOT NULL,
 	`created_at` integer DEFAULT (unixepoch())
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `users_email_unique` ON `users` (`email`);--> statement-breakpoint
 CREATE UNIQUE INDEX `users_session_id_unique` ON `users` (`session_id`);--> statement-breakpoint
 CREATE TABLE `votes` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,

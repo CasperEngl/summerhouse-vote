@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "./components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { Activity } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { UserSection } from "./components/UserSection";
 import { userQueryOptions } from "./hooks/useVoting";
@@ -70,32 +69,37 @@ export function App() {
             <UserSection />
 
             {/* Show navigation and content only when user exists */}
-            <Activity mode={userQuery.data ? "visible" : "hidden"}>
-              {/* Navigation */}
-              <div className="flex justify-center gap-4">
-                <Button
-                  variant={!isResultsPage ? "default" : "outline"}
-                  asChild
-                >
-                  <Link to="/">
-                    <Vote className="w-4 h-4 mr-2" />
-                    Stem
-                  </Link>
-                </Button>
-                <Button variant={isResultsPage ? "default" : "outline"} asChild>
-                  <Link to="/results">
-                    <Trophy className="w-4 h-4 mr-2" />
-                    Resultater
-                  </Link>
-                </Button>
-              </div>
+            {userQuery.data && (
+              <>
+                {/* Navigation */}
+                <div className="flex justify-center gap-4">
+                  <Button
+                    variant={!isResultsPage ? "default" : "outline"}
+                    asChild
+                  >
+                    <Link to="/">
+                      <Vote className="w-4 h-4 mr-2" />
+                      Stem
+                    </Link>
+                  </Button>
+                  <Button
+                    variant={isResultsPage ? "default" : "outline"}
+                    asChild
+                  >
+                    <Link to="/results">
+                      <Trophy className="w-4 h-4 mr-2" />
+                      Resultater
+                    </Link>
+                  </Button>
+                </div>
 
-              {/* Content */}
-              <Routes>
-                <Route path="/" element={<SummerHousesList />} />
-                <Route path="/results" element={<ResultsList />} />
-              </Routes>
-            </Activity>
+                {/* Content */}
+                <Routes>
+                  <Route path="/" element={<SummerHousesList />} />
+                  <Route path="/results" element={<ResultsList />} />
+                </Routes>
+              </>
+            )}
           </div>
         </div>
       </div>

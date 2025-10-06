@@ -56,7 +56,9 @@ const seedDatabase = Effect.gen(function* () {
 
   // Check if we already have summer houses
   const db = yield* DatabaseService;
-  const existingHouses = yield* db.getAllSummerHouses();
+  const existingHouses = yield* db
+    .getAllSummerHouses()
+    .pipe(Effect.orElse(() => Effect.succeed([])));
 
   if (existingHouses.length > 0) {
     console.log("Database already seeded. Skipping...");

@@ -18,6 +18,7 @@ export interface UserWithVotes extends User {
 // API Request/Response Types
 export interface CreateUserRequest {
   name: string;
+  email: string;
 }
 
 export interface CreateUserResponse {

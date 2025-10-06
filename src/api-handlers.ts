@@ -9,6 +9,7 @@ import {
 // Schemas for request bodies
 const CreateUserRequest = Schema.Struct({
   name: Schema.String.pipe(Schema.nonEmptyString()),
+  email: Schema.String.pipe(Schema.nonEmptyString()),
 });
 
 const VoteRequest = Schema.Struct({
@@ -48,7 +49,7 @@ export function createUserHandler(req: Request) {
       sessionId = generateSessionId();
     }
 
-    yield* DatabaseService.createUser(body.name.trim(), sessionId);
+    yield* DatabaseService.createUser(body.name.trim(), body.email.trim().toLowerCase(), sessionId);
     const userWithVotes = yield* DatabaseService.getUserWithVotes(sessionId);
 
     return createResponseWithSession({ user: userWithVotes }, sessionId);
