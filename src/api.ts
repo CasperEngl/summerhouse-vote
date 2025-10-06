@@ -58,6 +58,11 @@ export const userApi = {
       throw error;
     }
   },
+
+  logout: (): Promise<{ success: boolean }> =>
+    apiRequest("/users", {
+      method: "DELETE",
+    }),
 };
 
 // Summer Houses API

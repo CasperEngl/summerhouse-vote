@@ -61,6 +61,21 @@ const server = serve({
           );
         }
       },
+
+      DELETE: async (req) => {
+        try {
+          // Clear the session cookie by setting it to expire immediately
+          const response = Response.json({ success: true });
+          response.headers.set(
+            "Set-Cookie",
+            "session_id=; HttpOnly; Path=/; SameSite=Strict; Max-Age=0",
+          );
+          return response;
+        } catch (error) {
+          console.error("Error logging out:", error);
+          return Response.json({ error: "Failed to logout" }, { status: 500 });
+        }
+      },
     },
 
     "/api/summer-houses": {

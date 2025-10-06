@@ -60,6 +60,22 @@ export const useCreateUser = () => {
   });
 };
 
+export const useLogout = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      return await userApi.logout();
+    },
+    onSuccess: () => {
+      // Clear user data from cache
+      queryClient.setQueryData(queryKeys.user, null);
+      // Optionally clear other cached data
+      queryClient.clear();
+    },
+  });
+};
+
 export const useVote = () => {
   const queryClient = useQueryClient();
 
