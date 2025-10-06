@@ -54,17 +54,11 @@ export function SummerHouseCard({
             src={summerHouse.imageUrl}
             alt={summerHouse.name}
             className="w-full h-48 object-cover rounded-t-lg hover:opacity-90 transition-opacity"
-            onError={(e) => {
-              // Fallback to a placeholder if image fails to load
-              e.currentTarget.src =
-                "https://images.unsplash.com/photo-1449844908441-8829872d2607?w=400&h=300&fit=crop";
-            }}
           />
         </a>
         {hasVoted && (
-          <Badge className="absolute top-2 right-2 bg-red-500 hover:bg-red-600">
-            <Heart className="w-3 h-3 mr-1 fill-current" />
-            Stem
+          <Badge className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 rounded-full p-2">
+            <Heart className="w-3 h-3 fill-current" />
           </Badge>
         )}
       </div>
