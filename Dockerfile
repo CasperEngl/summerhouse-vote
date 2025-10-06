@@ -44,4 +44,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD bun --bun -e "fetch('http://localhost:3000').then(r => process.exit(r.ok ? 0 : 1))"
 
 # Run database migrations and seed, then start the server
-CMD bun --bun src/seed.ts && NODE_ENV=production bun --bun src/index.tsx
+CMD bun --bun src/seed.ts && bun start
