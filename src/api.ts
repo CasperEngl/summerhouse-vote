@@ -1,26 +1,28 @@
-import type {
-  CheckUserRequest,
-  CheckUserResponse,
-  CreateUserRequest,
-  CreateUserResponse,
-  LoginRequest,
-  LoginResponse,
-  GetUserResponse,
-  GetSummerHousesResponse,
-  VoteRequest,
-  VoteResponse,
-  DeleteVoteRequest,
-  DeleteVoteResponse,
-  GetResultsResponse,
-} from "./types";
+import { Schema } from "effect";
+import {
+  CheckUserRequestSchema,
+  CheckUserResponseSchema,
+  CreateUserRequestSchema,
+  CreateUserResponseSchema,
+  DeleteVoteRequestSchema,
+  DeleteVoteResponseSchema,
+  GetResultsResponseSchema,
+  GetSummerHousesResponseSchema,
+  GetUserResponseSchema,
+  LoginRequestSchema,
+  LoginResponseSchema,
+  VoteRequestSchema,
+  VoteResponseSchema,
+} from "./schemas";
 
 // API utility functions
 const API_BASE = "/api";
 
-async function apiRequest<T>(
+async function apiRequest<A, I>(
   endpoint: string,
+  responseSchema: Schema.Schema<A, I, never>,
   options: RequestInit = {},
-): Promise<T> {
+): Promise<A> {
   const response = await fetch(`${API_BASE}${endpoint}`, {
     headers: {
       "Content-Type": "application/json",
@@ -37,32 +39,34 @@ async function apiRequest<T>(
     throw new Error(error.error || `HTTP ${response.status}`);
   }
 
-  return response.json();
+  const jsonData = await response.json();
+
+  return Schema.decodeUnknownSync(responseSchema)(jsonData);
 }
 
 // User API
 export const userApi = {
-  check: (data: CheckUserRequest): Promise<CheckUserResponse> =>
-    apiRequest("/users/check", {
+  check: (data: typeof CheckUserRequestSchema.Type) =>
+    apiRequest("/users/check", CheckUserResponseSchema, {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
-  create: (data: CreateUserRequest): Promise<CreateUserResponse> =>
-    apiRequest("/users", {
+  create: (data: typeof CreateUserRequestSchema.Type) =>
+    apiRequest("/users", CreateUserResponseSchema, {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
-  login: (data: LoginRequest): Promise<LoginResponse> =>
-    apiRequest("/users/login", {
+  login: (data: typeof LoginRequestSchema.Type) =>
+    apiRequest("/users/login", LoginResponseSchema, {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
-  get: async (): Promise<GetUserResponse> => {
+  get: async () => {
     try {
-      return await apiRequest("/users");
+      return await apiRequest("/users", GetUserResponseSchema);
     } catch (error) {
       // If we get a 401 (no session), return null user instead of throwing
       if (
@@ -75,27 +79,27 @@ export const userApi = {
     }
   },
 
-  logout: (): Promise<{ success: boolean }> =>
-    apiRequest("/users", {
+  logout: () =>
+    apiRequest("/users", Schema.Struct({ success: Schema.Boolean }), {
       method: "DELETE",
     }),
 };
 
 // Summer Houses API
 export const summerHousesApi = {
-  getAll: (): Promise<GetSummerHousesResponse> => apiRequest("/summer-houses"),
+  getAll: () => apiRequest("/summer-houses", GetSummerHousesResponseSchema),
 };
 
 // Votes API
 export const votesApi = {
-  create: (data: VoteRequest): Promise<VoteResponse> =>
-    apiRequest("/votes", {
+  create: (data: typeof VoteRequestSchema.Type) =>
+    apiRequest("/votes", VoteResponseSchema, {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
-  delete: (data: DeleteVoteRequest): Promise<DeleteVoteResponse> =>
-    apiRequest("/votes", {
+  delete: (data: typeof DeleteVoteRequestSchema.Type) =>
+    apiRequest("/votes", DeleteVoteResponseSchema, {
       method: "DELETE",
       body: JSON.stringify(data),
     }),
@@ -103,5 +107,5 @@ export const votesApi = {
 
 // Results API
 export const resultsApi = {
-  get: (): Promise<GetResultsResponse> => apiRequest("/results"),
+  get: () => apiRequest("/results", GetResultsResponseSchema),
 };

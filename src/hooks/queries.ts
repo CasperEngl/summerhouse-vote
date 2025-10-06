@@ -4,14 +4,11 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { resultsApi, summerHousesApi, userApi, votesApi } from "../api";
-import type { SummerHouse } from "../database";
 import type {
-  CheckUserRequest,
-  CreateUserRequest,
-  LoginRequest,
-  SummerHouseWithVoteCount,
-  UserWithVotes,
-} from "../types";
+  CheckUserRequestSchema,
+  CreateUserRequestSchema,
+  LoginRequestSchema,
+} from "../schemas";
 
 // Query keys
 export const queryKeys = {
@@ -23,7 +20,7 @@ export const queryKeys = {
 // Query options
 export const userQueryOptions = queryOptions({
   queryKey: queryKeys.user,
-  queryFn: async (): Promise<UserWithVotes | null> => {
+  queryFn: async () => {
     const response = await userApi.get();
     return response.user;
   },
@@ -33,7 +30,7 @@ export const userQueryOptions = queryOptions({
 
 export const summerHousesQueryOptions = queryOptions({
   queryKey: queryKeys.summerHouses,
-  queryFn: async (): Promise<SummerHouse[]> => {
+  queryFn: async () => {
     const response = await summerHousesApi.getAll();
     return response.summerHouses;
   },
@@ -41,7 +38,7 @@ export const summerHousesQueryOptions = queryOptions({
 
 export const resultsQueryOptions = queryOptions({
   queryKey: queryKeys.results,
-  queryFn: async (): Promise<SummerHouseWithVoteCount[]> => {
+  queryFn: async () => {
     const response = await resultsApi.get();
     return response.results;
   },
@@ -50,7 +47,7 @@ export const resultsQueryOptions = queryOptions({
 // Mutations
 export const useCheckUser = () => {
   return useMutation({
-    mutationFn: async (data: CheckUserRequest) => {
+    mutationFn: async (data: typeof CheckUserRequestSchema.Type) => {
       const response = await userApi.check(data);
       return response.exists;
     },
@@ -61,7 +58,7 @@ export const useCreateUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: CreateUserRequest) => {
+    mutationFn: async (data: typeof CreateUserRequestSchema.Type) => {
       const response = await userApi.create(data);
       return response.user;
     },
@@ -75,7 +72,7 @@ export const useLogin = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: LoginRequest) => {
+    mutationFn: async (data: typeof LoginRequestSchema.Type) => {
       const response = await userApi.login(data);
       return response.user;
     },

@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { userQueryOptions } from "@/hooks/queries";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -24,7 +25,13 @@ export function SummerHouseCard({
 }) {
   const userQuery = useSuspenseQuery(userQueryOptions);
   const [isVoting, setIsVoting] = useState(false);
-  const hasVoted = userQuery.data?.votes?.includes(summerHouse.id) ?? false;
+  const hasVoted =
+    userQuery.data?.votes?.some(
+      (vote) => vote.summerHouseId === summerHouse.id,
+    ) ?? false;
+  const voteTimestamp = userQuery.data?.votes?.find(
+    (vote) => vote.summerHouseId === summerHouse.id,
+  )?.createdAt;
 
   const handleVoteToggle = async () => {
     if (!userQuery.data) return;
@@ -58,9 +65,27 @@ export function SummerHouseCard({
           />
         </a>
         {hasVoted && (
-          <Badge className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 rounded-full p-2">
-            <Heart className="w-3 h-3 fill-current" />
-          </Badge>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 rounded-full p-2 cursor-help">
+                <Heart className="w-3 h-3 fill-current" />
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                Stemte{" "}
+                {voteTimestamp
+                  ? new Date(voteTimestamp).toLocaleDateString("da-DK", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "ukendt tidspunkt"}
+              </p>
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
 

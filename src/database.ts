@@ -67,9 +67,6 @@ export type NewSummerHouse = typeof summerHouses.$inferInsert;
 export type Vote = typeof votes.$inferSelect;
 export type NewVote = typeof votes.$inferInsert;
 
-export interface UserWithVotes extends User {
-  votes: number[];
-}
 
 // Database error types
 export class CreateUserError extends Data.TaggedError("CreateUserError")<{
@@ -362,7 +359,10 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
 
             return {
               ...user,
-              votes: user.votes.map((vote: Vote) => vote.summerHouseId),
+              votes: user.votes.map((vote: Vote) => ({
+                summerHouseId: vote.summerHouseId,
+                createdAt: vote.createdAt,
+              })),
             };
           },
           catch: (error) =>

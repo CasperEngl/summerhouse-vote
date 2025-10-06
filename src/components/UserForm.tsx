@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type UseFormReturn } from "react-hook-form";
 import { useCheckUser, useCreateUser, useLogin } from "../hooks/queries";
-import type { UserFormProps } from "../types";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -13,131 +12,82 @@ import {
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
-type FormStep = "email" | "name";
+interface EmailStepProps {
+  emailForm: UseFormReturn<{ email: string }>;
+  onEmailSubmit: (data: { email: string }) => Promise<void>;
+  emailLoading: boolean;
+  emailError?: string;
+}
 
-export function UserForm({
-  onUserCreated,
-  isLoading: externalLoading,
-}: UserFormProps) {
-  const [step, setStep] = useState<FormStep>("email");
-  const [email, setEmail] = useState("");
-
-  const checkUserMutation = useCheckUser();
-  const createUserMutation = useCreateUser();
-  const loginMutation = useLogin();
-
-  const emailForm = useForm<{ email: string }>({
-    defaultValues: { email: "" },
-  });
-
-  const nameForm = useForm<{ name: string }>({
-    defaultValues: { name: "" },
-  });
-
-  const onEmailSubmit = async (data: { email: string }) => {
-    try {
-      const userExists = await checkUserMutation.mutateAsync({
-        email: data.email.trim().toLowerCase(),
-      });
-
-      if (userExists) {
-        // User exists, log them in
-        await loginMutation.mutateAsync({
-          email: data.email.trim().toLowerCase(),
-        });
-        // The mutation will handle the success via the onSuccess callback
-      } else {
-        // User doesn't exist, move to name step
-        setEmail(data.email.trim().toLowerCase());
-        setStep("name");
-      }
-    } catch (err) {
-      // Error is handled by the mutation
-    }
-  };
-
-  const onNameSubmit = async (data: { name: string }) => {
-    try {
-      await createUserMutation.mutateAsync({
-        name: data.name.trim(),
-        email: email,
-      });
-      // The mutation will handle the success via the onSuccess callback
-    } catch (err) {
-      // Error is handled by the mutation
-    }
-  };
-
-  const onBackToEmail = () => {
-    setStep("email");
-    setEmail("");
-    emailForm.reset();
-    nameForm.reset();
-  };
-
-  const emailLoading =
-    externalLoading ||
-    checkUserMutation.isPending ||
-    loginMutation.isPending ||
-    emailForm.formState.isSubmitting;
-  const nameLoading =
-    externalLoading ||
-    createUserMutation.isPending ||
-    nameForm.formState.isSubmitting;
-
-  const emailError =
-    checkUserMutation.error?.message || loginMutation.error?.message;
-  const nameError = createUserMutation.error?.message;
-
-  if (step === "email") {
-    return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle>Velkommen til Sommerhus Afstemning</CardTitle>
-          <CardDescription>Indtast din email for at begynde</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            onSubmit={emailForm.handleSubmit(onEmailSubmit)}
-            className="space-y-4"
-          >
-            <div className="space-y-2">
-              <Label htmlFor="email">Din email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Indtast din email"
-                disabled={emailLoading}
-                {...emailForm.register("email", {
-                  required: "Email er påkrævet",
-                  pattern: {
-                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                    message: "Indtast venligst en gyldig email adresse",
-                  },
-                })}
-              />
-              {emailForm.formState.errors.email && (
-                <p className="text-sm text-red-600">
-                  {emailForm.formState.errors.email.message}
-                </p>
-              )}
-            </div>
-
-            {emailError && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {emailError}
-              </div>
+function EmailStep({
+  emailForm,
+  onEmailSubmit,
+  emailLoading,
+  emailError,
+}: EmailStepProps) {
+  return (
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle>Velkommen til Sommerhus Afstemning</CardTitle>
+        <CardDescription>Indtast din email for at begynde</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form
+          onSubmit={emailForm.handleSubmit(onEmailSubmit)}
+          className="space-y-4"
+        >
+          <div className="space-y-2">
+            <Label htmlFor="email">Din email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Indtast din email"
+              disabled={emailLoading}
+              {...emailForm.register("email", {
+                required: "Email er påkrævet",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "Indtast venligst en gyldig email adresse",
+                },
+              })}
+            />
+            {emailForm.formState.errors.email && (
+              <p className="text-sm text-red-600">
+                {emailForm.formState.errors.email.message}
+              </p>
             )}
+          </div>
 
-            <Button type="submit" className="w-full" disabled={emailLoading}>
-              {emailLoading ? "Tjekker email..." : "Fortsæt"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    );
-  }
+          {emailError && (
+            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+              {emailError}
+            </div>
+          )}
 
+          <Button type="submit" className="w-full" disabled={emailLoading}>
+            {emailLoading ? "Tjekker email..." : "Fortsæt"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface NameStepProps {
+  nameForm: UseFormReturn<{ name: string }>;
+  onNameSubmit: (data: { name: string }) => Promise<void>;
+  onBackToEmail: () => void;
+  nameLoading: boolean;
+  nameError?: string;
+}
+
+function NameStep({
+  nameForm,
+  onNameSubmit,
+  onBackToEmail,
+  nameLoading,
+  nameError,
+}: NameStepProps) {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -196,5 +146,97 @@ export function UserForm({
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+type FormStep = "email" | "name";
+
+export function UserForm() {
+  const [step, setStep] = useState<FormStep>("email");
+  const [email, setEmail] = useState("");
+
+  const checkUserMutation = useCheckUser();
+  const createUserMutation = useCreateUser();
+  const loginMutation = useLogin();
+
+  const emailForm = useForm<{ email: string }>({
+    defaultValues: { email: "" },
+  });
+
+  const nameForm = useForm<{ name: string }>({
+    defaultValues: { name: "" },
+  });
+
+  const onEmailSubmit = async (data: { email: string }) => {
+    try {
+      const userExists = await checkUserMutation.mutateAsync({
+        email: data.email.trim().toLowerCase(),
+      });
+
+      if (userExists) {
+        // User exists, log them in
+        await loginMutation.mutateAsync({
+          email: data.email.trim().toLowerCase(),
+        });
+        // The mutation will handle the success via the onSuccess callback
+      } else {
+        // User doesn't exist, move to name step
+        setEmail(data.email.trim().toLowerCase());
+        setStep("name");
+      }
+    } catch (err) {
+      // Error is handled by the mutation
+    }
+  };
+
+  const onNameSubmit = async (data: { name: string }) => {
+    try {
+      await createUserMutation.mutateAsync({
+        name: data.name.trim(),
+        email: email,
+      });
+      // The mutation will handle the success via the onSuccess callback
+    } catch (err) {
+      // Error is handled by the mutation
+    }
+  };
+
+  const onBackToEmail = () => {
+    setStep("email");
+    setEmail("");
+    emailForm.reset();
+    nameForm.reset();
+  };
+
+  const emailLoading =
+    checkUserMutation.isPending ||
+    loginMutation.isPending ||
+    emailForm.formState.isSubmitting;
+  const nameLoading =
+    createUserMutation.isPending || nameForm.formState.isSubmitting;
+
+  const emailError =
+    checkUserMutation.error?.message || loginMutation.error?.message;
+  const nameError = createUserMutation.error?.message;
+
+  if (step === "email") {
+    return (
+      <EmailStep
+        emailForm={emailForm}
+        onEmailSubmit={onEmailSubmit}
+        emailLoading={emailLoading}
+        emailError={emailError}
+      />
+    );
+  }
+
+  return (
+    <NameStep
+      nameForm={nameForm}
+      onNameSubmit={onNameSubmit}
+      onBackToEmail={onBackToEmail}
+      nameLoading={nameLoading}
+      nameError={nameError}
+    />
   );
 }

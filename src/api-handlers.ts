@@ -5,28 +5,21 @@ import {
   generateSessionId,
   getSessionId,
 } from "./utils";
-
-// Schemas for request bodies
-const CreateUserRequest = Schema.Struct({
-  name: Schema.String.pipe(Schema.nonEmptyString()),
-  email: Schema.String.pipe(Schema.nonEmptyString()),
-});
-
-const LoginRequest = Schema.Struct({
-  email: Schema.String.pipe(Schema.nonEmptyString()),
-});
-
-const CheckUserRequest = Schema.Struct({
-  email: Schema.String.pipe(Schema.nonEmptyString()),
-});
-
-const VoteRequest = Schema.Struct({
-  summerHouseId: Schema.Number,
-});
-
-const DeleteVoteRequest = Schema.Struct({
-  summerHouseId: Schema.Number,
-});
+import {
+  CreateUserRequestSchema,
+  LoginRequestSchema,
+  CheckUserRequestSchema,
+  VoteRequestSchema,
+  DeleteVoteRequestSchema,
+  CreateUserResponseSchema,
+  LoginResponseSchema,
+  CheckUserResponseSchema,
+  GetUserResponseSchema,
+  GetSummerHousesResponseSchema,
+  VoteResponseSchema,
+  DeleteVoteResponseSchema,
+  GetResultsResponseSchema,
+} from "./schemas";
 
 // Helper function to create error response
 const createErrorResponse = (error: string, status: number = 500): Response => {
@@ -50,7 +43,7 @@ export function createUserHandler(req: Request) {
     const body = yield* Effect.tryPromise({
       try: () => req.json(),
       catch: (error) => new Error(`Failed to parse JSON: ${error}`),
-    }).pipe(Effect.flatMap(Schema.decodeUnknown(CreateUserRequest)));
+    }).pipe(Effect.flatMap(Schema.decodeUnknown(CreateUserRequestSchema)));
 
     let sessionId = getSessionId(req);
     if (!sessionId) {
@@ -64,7 +57,10 @@ export function createUserHandler(req: Request) {
     );
     const userWithVotes = yield* DatabaseService.getUserWithVotes(sessionId);
 
-    return createResponseWithSession({ user: userWithVotes }, sessionId);
+    // Validate response
+    const validatedResponse = yield* Schema.decodeUnknown(CreateUserResponseSchema)({ user: userWithVotes });
+
+    return createResponseWithSession(validatedResponse, sessionId);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logError("Error creating user:", error).pipe(
@@ -79,7 +75,7 @@ export function loginUserHandler(req: Request) {
     const body = yield* Effect.tryPromise({
       try: () => req.json(),
       catch: (error) => new Error(`Failed to parse JSON: ${error}`),
-    }).pipe(Effect.flatMap(Schema.decodeUnknown(LoginRequest)));
+    }).pipe(Effect.flatMap(Schema.decodeUnknown(LoginRequestSchema)));
 
     let sessionId = getSessionId(req);
     if (!sessionId) {
@@ -99,7 +95,10 @@ export function loginUserHandler(req: Request) {
     yield* DatabaseService.updateUserSession(existingUser.id, sessionId);
     const userWithVotes = yield* DatabaseService.getUserWithVotes(sessionId);
 
-    return createResponseWithSession({ user: userWithVotes }, sessionId);
+    // Validate response
+    const validatedResponse = yield* Schema.decodeUnknown(LoginResponseSchema)({ user: userWithVotes });
+
+    return createResponseWithSession(validatedResponse, sessionId);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logError("Error logging in user:", error).pipe(
@@ -119,11 +118,11 @@ export function getUserHandler(req: Request) {
     }
 
     const userWithVotes = yield* db.getUserWithVotes(sessionId);
-    if (!userWithVotes) {
-      return createErrorResponse("User not found", 404);
-    }
 
-    return createSuccessResponse({ user: userWithVotes });
+    // Validate response
+    const validatedResponse = yield* Schema.decodeUnknown(GetUserResponseSchema)({ user: userWithVotes });
+
+    return createSuccessResponse(validatedResponse);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logError("Error getting user:", error).pipe(
@@ -158,15 +157,18 @@ export function checkUserHandler(req: Request) {
     const body = yield* Effect.tryPromise({
       try: () => req.json(),
       catch: (error) => new Error(`Failed to parse JSON: ${error}`),
-    }).pipe(Effect.flatMap(Schema.decodeUnknown(CheckUserRequest)));
+    }).pipe(Effect.flatMap(Schema.decodeUnknown(CheckUserRequestSchema)));
 
     const user = yield* DatabaseService.getUserByEmail(
       body.email.trim().toLowerCase(),
     );
 
-    return createSuccessResponse({
+    // Validate response
+    const validatedResponse = yield* Schema.decodeUnknown(CheckUserResponseSchema)({
       exists: user !== undefined,
     });
+
+    return createSuccessResponse(validatedResponse);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logError("Error checking user:", error).pipe(
@@ -181,7 +183,10 @@ export function getSummerHousesHandler(_req: Request) {
     const db = yield* DatabaseService;
     const summerHouses = yield* db.getAllSummerHouses();
 
-    return createSuccessResponse({ summerHouses });
+    // Validate response
+    const validatedResponse = yield* Schema.decodeUnknown(GetSummerHousesResponseSchema)({ summerHouses });
+
+    return createSuccessResponse(validatedResponse);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logError("Error getting summer houses:", error).pipe(
@@ -204,7 +209,7 @@ export function createVoteHandler(req: Request) {
     const body = yield* Effect.tryPromise({
       try: () => req.json(),
       catch: (error) => new Error(`Failed to parse JSON: ${error}`),
-    }).pipe(Effect.flatMap(Schema.decodeUnknown(VoteRequest)));
+    }).pipe(Effect.flatMap(Schema.decodeUnknown(VoteRequestSchema)));
 
     const user = yield* DatabaseService.getUserBySessionId(sessionId);
     if (!user) {
@@ -224,7 +229,10 @@ export function createVoteHandler(req: Request) {
     const vote = yield* DatabaseService.createVote(user.id, body.summerHouseId);
     const userWithVotes = yield* DatabaseService.getUserWithVotes(sessionId);
 
-    return createSuccessResponse({ vote, user: userWithVotes });
+    // Validate response
+    const validatedResponse = yield* Schema.decodeUnknown(VoteResponseSchema)({ vote, user: userWithVotes });
+
+    return createSuccessResponse(validatedResponse);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logError("Error creating vote:", error).pipe(
@@ -244,7 +252,7 @@ export function deleteVoteHandler(req: Request) {
     const body = yield* Effect.tryPromise({
       try: () => req.json(),
       catch: (error) => new Error(`Failed to parse JSON: ${error}`),
-    }).pipe(Effect.flatMap(Schema.decodeUnknown(DeleteVoteRequest)));
+    }).pipe(Effect.flatMap(Schema.decodeUnknown(DeleteVoteRequestSchema)));
 
     const user = yield* DatabaseService.getUserBySessionId(sessionId);
     if (!user) {
@@ -260,7 +268,11 @@ export function deleteVoteHandler(req: Request) {
     }
 
     const userWithVotes = yield* DatabaseService.getUserWithVotes(sessionId);
-    return createSuccessResponse({ success: true, user: userWithVotes });
+
+    // Validate response
+    const validatedResponse = yield* Schema.decodeUnknown(DeleteVoteResponseSchema)({ success: true, user: userWithVotes });
+
+    return createSuccessResponse(validatedResponse);
   });
 }
 // Results API handlers
@@ -268,7 +280,10 @@ export function getResultsHandler(_req: Request) {
   return Effect.gen(function* () {
     const results = yield* DatabaseService.getSummerHousesWithVoteCounts();
 
-    return createSuccessResponse({ results });
+    // Validate response
+    const validatedResponse = yield* Schema.decodeUnknown(GetResultsResponseSchema)({ results });
+
+    return createSuccessResponse(validatedResponse);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logError("Error getting results:", error).pipe(
