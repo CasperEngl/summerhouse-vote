@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "9ac92313-1f79-4a6a-a8c4-008bce311c3b",
+  "id": "5baeeb64-e9a5-4734-8c49-3c9d84020966",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "summer_houses": {
