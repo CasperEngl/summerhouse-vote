@@ -96,3 +96,9 @@ export const DeleteVoteResponseSchema = Schema.Struct({
 export const GetResultsResponseSchema = Schema.Struct({
   results: Schema.Array(SummerHouseWithVoteCountSchema),
 });
+
+export const HealthCheckResponseSchema = Schema.Struct({
+  status: Schema.Literal("healthy"),
+  timestamp: Schema.String,
+  database: Schema.Literal("connected"),
+});

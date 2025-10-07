@@ -10,6 +10,7 @@ import {
   getSummerHousesHandler,
   getUserHandler,
   logoutHandler,
+  healthCheckHandler,
 } from "./api-handlers";
 import { runMigrations } from "./database";
 import index from "./index.html";
@@ -19,6 +20,10 @@ runMigrations.pipe(Effect.runSync);
 
 const server = serve({
   routes: {
+    "/api/health": {
+      GET: (req) => healthCheckHandler(req).pipe(ServerRuntime.runPromise),
+    },
+
     "/api/users": {
       POST: (req) => createUserHandler(req).pipe(ServerRuntime.runPromise),
       GET: (req) => getUserHandler(req).pipe(ServerRuntime.runPromise),

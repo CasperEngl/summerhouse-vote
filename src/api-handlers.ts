@@ -19,6 +19,7 @@ import {
   VoteResponseSchema,
   DeleteVoteResponseSchema,
   GetResultsResponseSchema,
+  HealthCheckResponseSchema,
 } from "./schemas";
 
 // Helper function to create error response
@@ -282,6 +283,31 @@ export function getResultsHandler(_req: Request) {
     Effect.catchAll((error) =>
       Effect.logError("Error getting results:", error).pipe(
         Effect.map(() => createErrorResponse("Failed to get results", 500)),
+      ),
+    ),
+  );
+}
+
+// Health check API handler
+export function healthCheckHandler(_req: Request) {
+  return Effect.gen(function* () {
+    // Check database connectivity by attempting to query summer houses
+    yield* DatabaseService.getAllSummerHouses();
+
+    // Validate response
+    const validatedResponse = yield* Schema.decodeUnknown(
+      HealthCheckResponseSchema,
+    )({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      database: "connected",
+    });
+
+    return createSuccessResponse(validatedResponse);
+  }).pipe(
+    Effect.catchAll((error) =>
+      Effect.logError("Health check failed:", error).pipe(
+        Effect.map(() => createErrorResponse("Service unhealthy", 503)),
       ),
     ),
   );
