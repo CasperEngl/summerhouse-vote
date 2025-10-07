@@ -72,15 +72,12 @@ const seedDatabase = Effect.gen(function* () {
   console.log("✅ Database seeded successfully!");
 });
 
-const main = pipe(
-  seedDatabase,
+seedDatabase.pipe(
   Effect.andThen(() => console.log("🎉 Seeding complete!")),
   Effect.catchAll((error) => {
     console.error("💥 Seeding failed:", error);
+
     return Effect.fail(error);
   }),
+  ServerRuntime.runPromise,
 );
-
-ServerRuntime.runPromise(main)
-  .then(() => process.exit(0))
-  .catch(() => process.exit(1));
