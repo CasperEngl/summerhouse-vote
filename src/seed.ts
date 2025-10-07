@@ -50,6 +50,9 @@ const sampleSummerHouses = [
 const seedDatabase = Effect.gen(function* () {
   console.log("🌱 Seeding database...");
 
+  console.log("Running migrations...");
+  yield* runMigrations;
+
   const db = yield* DatabaseService;
   const existingHouses = yield* db
     .getAllSummerHouses()
@@ -59,9 +62,6 @@ const seedDatabase = Effect.gen(function* () {
     console.log("Database already seeded. Skipping...");
     return;
   }
-
-  console.log("Running migrations...");
-  yield* runMigrations;
 
   console.log("Creating summer houses...");
   for (const house of sampleSummerHouses) {
