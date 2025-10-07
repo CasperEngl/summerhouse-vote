@@ -15,12 +15,10 @@ import { runMigrations } from "./database";
 import index from "./index.html";
 import { ServerRuntime } from "./runtime";
 
-// Run migrations on startup
-Effect.runSync(runMigrations);
+runMigrations.pipe(Effect.runSync);
 
 const server = serve({
   routes: {
-    // API Routes
     "/api/users": {
       POST: (req) => createUserHandler(req).pipe(ServerRuntime.runPromise),
       GET: (req) => getUserHandler(req).pipe(ServerRuntime.runPromise),
@@ -48,15 +46,11 @@ const server = serve({
       GET: (req) => getResultsHandler(req).pipe(ServerRuntime.runPromise),
     },
 
-    // Serve index.html for all unmatched routes.
     "/*": index,
   },
 
   development: process.env.NODE_ENV !== "production" && {
-    // Enable browser hot reloading in development
     hmr: true,
-
-    // Echo console logs from the browser to the server
     console: true,
   },
 });

@@ -50,11 +50,6 @@ const sampleSummerHouses = [
 const seedDatabase = Effect.gen(function* () {
   console.log("🌱 Seeding database...");
 
-  // Run migrations to ensure database schema is up to date
-  console.log("Running migrations...");
-  yield* runMigrations;
-
-  // Check if we already have summer houses
   const db = yield* DatabaseService;
   const existingHouses = yield* db
     .getAllSummerHouses()
@@ -65,6 +60,9 @@ const seedDatabase = Effect.gen(function* () {
     return;
   }
 
+  console.log("Running migrations...");
+  yield* runMigrations;
+
   console.log("Creating summer houses...");
   for (const house of sampleSummerHouses) {
     yield* db.createSummerHouse(house.name, house.imageUrl, house.bookingUrl);
@@ -74,7 +72,6 @@ const seedDatabase = Effect.gen(function* () {
   console.log("✅ Database seeded successfully!");
 });
 
-// Run the seed function using Effect runtime
 const main = pipe(
   seedDatabase,
   Effect.andThen(() => console.log("🎉 Seeding complete!")),
@@ -84,7 +81,6 @@ const main = pipe(
   }),
 );
 
-// Run with the server runtime and handle exit codes
 ServerRuntime.runPromise(main)
   .then(() => process.exit(0))
   .catch(() => process.exit(1));

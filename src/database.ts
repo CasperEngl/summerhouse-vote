@@ -5,7 +5,6 @@ import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { Data, Effect } from "effect";
 
-// Schema definitions
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
@@ -39,7 +38,6 @@ export const votes = sqliteTable("votes", {
   ),
 });
 
-// Relations
 export const usersRelations = relations(users, ({ many }) => ({
   votes: many(votes),
 }));
@@ -59,7 +57,6 @@ export const votesRelations = relations(votes, ({ one }) => ({
   }),
 }));
 
-// Database types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type SummerHouse = typeof summerHouses.$inferSelect;
@@ -67,8 +64,6 @@ export type NewSummerHouse = typeof summerHouses.$inferInsert;
 export type Vote = typeof votes.$inferSelect;
 export type NewVote = typeof votes.$inferInsert;
 
-
-// Database error types
 export class CreateUserError extends Data.TaggedError("CreateUserError")<{
   message: string;
   cause?: unknown;
@@ -153,7 +148,6 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
       createUser: (name: string, email: string, sessionId: string) =>
         Effect.tryPromise({
           try: async () => {
-            // Check if user already exists
             const existingUser = await db.query.users.findFirst({
               where: eq(users.email, email),
             });
@@ -318,7 +312,6 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
       deleteVote: (userId: number, summerHouseId: number) =>
         Effect.tryPromise({
           try: async () => {
-            // Check if vote exists first
             const existingVote = await db
               .select()
               .from(votes)
@@ -401,7 +394,6 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
   },
 ) {}
 
-// Initialize database
 const sqlite = new Database("data/voting.db", { create: true });
 const db = drizzle(sqlite, {
   schema: {
@@ -414,9 +406,14 @@ const db = drizzle(sqlite, {
   },
 });
 
-// Migration function
 export const runMigrations = Effect.try({
   try: () => migrate(db, { migrationsFolder: "./drizzle" }),
   catch: (error) =>
     new MigrationError({ message: "Migration failed", cause: error }),
-});
+}).pipe(
+  Effect.orElse(() => {
+    console.log("Migrations already applied. Skipping...");
+
+    return Effect.void;
+  }),
+);

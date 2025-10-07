@@ -26,4 +26,4 @@ RUN mkdir -p data
 
 EXPOSE 3000
 
-CMD bun --bun src/seed.ts && bun --bun start
+CMD bun --bun src/seed.ts && bun run start
