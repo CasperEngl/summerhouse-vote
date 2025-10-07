@@ -58,7 +58,9 @@ export function createUserHandler(req: Request) {
     const userWithVotes = yield* DatabaseService.getUserWithVotes(sessionId);
 
     // Validate response
-    const validatedResponse = yield* Schema.decodeUnknown(CreateUserResponseSchema)({ user: userWithVotes });
+    const validatedResponse = yield* Schema.decodeUnknown(
+      CreateUserResponseSchema,
+    )({ user: userWithVotes });
 
     return createResponseWithSession(validatedResponse, sessionId);
   }).pipe(
@@ -96,7 +98,9 @@ export function loginUserHandler(req: Request) {
     const userWithVotes = yield* DatabaseService.getUserWithVotes(sessionId);
 
     // Validate response
-    const validatedResponse = yield* Schema.decodeUnknown(LoginResponseSchema)({ user: userWithVotes });
+    const validatedResponse = yield* Schema.decodeUnknown(LoginResponseSchema)({
+      user: userWithVotes,
+    });
 
     return createResponseWithSession(validatedResponse, sessionId);
   }).pipe(
@@ -110,46 +114,26 @@ export function loginUserHandler(req: Request) {
 
 export function getUserHandler(req: Request) {
   return Effect.gen(function* () {
-    const db = yield* DatabaseService;
     const sessionId = getSessionId(req);
-
     if (!sessionId) {
       return createErrorResponse("No session found", 401);
     }
-
-    const userWithVotes = yield* db.getUserWithVotes(sessionId);
-
-    // Validate response
-    const validatedResponse = yield* Schema.decodeUnknown(GetUserResponseSchema)({ user: userWithVotes });
-
+    const userWithVotes = yield* DatabaseService.getUserWithVotes(sessionId);
+    const validatedResponse = yield* Schema.decodeUnknown(
+      GetUserResponseSchema,
+    )({ user: userWithVotes });
     return createSuccessResponse(validatedResponse);
-  }).pipe(
-    Effect.catchAll((error) =>
-      Effect.logError("Error getting user:", error).pipe(
-        Effect.map(() => createErrorResponse("Failed to get user", 500)),
-      ),
-    ),
-  );
+  });
 }
 export function logoutHandler(_req: Request) {
-  return Effect.try({
-    try: () => {
-      // Clear the session cookie by setting it to expire immediately
-      const response = createSuccessResponse({ success: true });
-      response.headers.set(
-        "Set-Cookie",
-        "session_id=; HttpOnly; Path=/; SameSite=Strict; Max-Age=0",
-      );
-      return response;
-    },
-    catch: () => createErrorResponse("Failed to logout", 500),
-  }).pipe(
-    Effect.catchAll((error) =>
-      Effect.logError("Error logging out:", error).pipe(
-        Effect.map(() => createErrorResponse("Failed to logout", 500)),
-      ),
-    ),
-  );
+  return Effect.gen(function* () {
+    const response = createSuccessResponse({ success: true });
+    response.headers.set(
+      "Set-Cookie",
+      "session_id=; HttpOnly; Path=/; SameSite=Strict; Max-Age=0",
+    );
+    return response;
+  });
 }
 
 export function checkUserHandler(req: Request) {
@@ -164,7 +148,9 @@ export function checkUserHandler(req: Request) {
     );
 
     // Validate response
-    const validatedResponse = yield* Schema.decodeUnknown(CheckUserResponseSchema)({
+    const validatedResponse = yield* Schema.decodeUnknown(
+      CheckUserResponseSchema,
+    )({
       exists: user !== undefined,
     });
 
@@ -180,11 +166,12 @@ export function checkUserHandler(req: Request) {
 // Summer Houses API handlers
 export function getSummerHousesHandler(_req: Request) {
   return Effect.gen(function* () {
-    const db = yield* DatabaseService;
-    const summerHouses = yield* db.getAllSummerHouses();
+    const summerHouses = yield* DatabaseService.getAllSummerHouses();
 
     // Validate response
-    const validatedResponse = yield* Schema.decodeUnknown(GetSummerHousesResponseSchema)({ summerHouses });
+    const validatedResponse = yield* Schema.decodeUnknown(
+      GetSummerHousesResponseSchema,
+    )({ summerHouses });
 
     return createSuccessResponse(validatedResponse);
   }).pipe(
@@ -230,7 +217,10 @@ export function createVoteHandler(req: Request) {
     const userWithVotes = yield* DatabaseService.getUserWithVotes(sessionId);
 
     // Validate response
-    const validatedResponse = yield* Schema.decodeUnknown(VoteResponseSchema)({ vote, user: userWithVotes });
+    const validatedResponse = yield* Schema.decodeUnknown(VoteResponseSchema)({
+      vote,
+      user: userWithVotes,
+    });
 
     return createSuccessResponse(validatedResponse);
   }).pipe(
@@ -270,7 +260,9 @@ export function deleteVoteHandler(req: Request) {
     const userWithVotes = yield* DatabaseService.getUserWithVotes(sessionId);
 
     // Validate response
-    const validatedResponse = yield* Schema.decodeUnknown(DeleteVoteResponseSchema)({ success: true, user: userWithVotes });
+    const validatedResponse = yield* Schema.decodeUnknown(
+      DeleteVoteResponseSchema,
+    )({ success: true, user: userWithVotes });
 
     return createSuccessResponse(validatedResponse);
   });
@@ -281,7 +273,9 @@ export function getResultsHandler(_req: Request) {
     const results = yield* DatabaseService.getSummerHousesWithVoteCounts();
 
     // Validate response
-    const validatedResponse = yield* Schema.decodeUnknown(GetResultsResponseSchema)({ results });
+    const validatedResponse = yield* Schema.decodeUnknown(
+      GetResultsResponseSchema,
+    )({ results });
 
     return createSuccessResponse(validatedResponse);
   }).pipe(
