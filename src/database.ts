@@ -1,41 +1,35 @@
-import { Database } from "bun:sqlite";
 import { eq, relations, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/bun-sqlite";
-import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { Pool } from "pg";
 import { Data, Effect } from "effect";
 
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   sessionId: text("session_id").notNull().unique(),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(
-    sql`(unixepoch())`,
-  ),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const summerHouses = sqliteTable("summer_houses", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const summerHouses = pgTable("summer_houses", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   imageUrl: text("image_url").notNull(),
   bookingUrl: text("booking_url").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(
-    sql`(unixepoch())`,
-  ),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const votes = sqliteTable("votes", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const votes = pgTable("votes", {
+  id: serial("id").primaryKey(),
   userId: integer("user_id")
     .notNull()
     .references(() => users.id),
   summerHouseId: integer("summer_house_id")
     .notNull()
     .references(() => summerHouses.id),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(
-    sql`(unixepoch())`,
-  ),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -394,8 +388,12 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
   },
 ) {}
 
-const sqlite = new Database("data/voting.db", { create: true });
-const db = drizzle(sqlite, {
+const pool = new Pool({
+  connectionString:
+    process.env.DATABASE_URL ||
+    "postgresql://postgres:postgres@localhost:5432/voting",
+});
+const db = drizzle(pool, {
   schema: {
     users,
     summerHouses,

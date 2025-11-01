@@ -23,8 +23,6 @@ COPY --from=builder /app/drizzle.config.ts ./
 COPY --from=builder /app/tsconfig.json ./
 COPY --from=builder /app/bunfig.toml ./
 
-RUN mkdir -p data
-
 EXPOSE 3000
 
 CMD bun --bun src/seed.ts && bun run start

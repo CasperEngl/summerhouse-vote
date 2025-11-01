@@ -3,11 +3,27 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    volumes:
-      - voting_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/voting
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:18
+    environment:
+      - POSTGRES_DB=voting
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d voting"]
+      interval: 2s
+      timeout: 1s
+      retries: 5
     restart: unless-stopped
 
 volumes:
-  voting_data:
+  postgres_data:
