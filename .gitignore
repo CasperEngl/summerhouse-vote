@@ -2,6 +2,9 @@
 voting.db
 data/
 
+# Docker override files (local development)
+docker-compose.override.yml
+
 # Dependencies
 node_modules/
 
